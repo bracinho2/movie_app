@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:movie_app/controllers/movie_controller.dart';
+import 'package:movie_app/decorators/movies_cache_repository_decorator.dart';
 import 'package:movie_app/models/movies_model.dart';
 import 'package:movie_app/repositories/movies_repository_impl.dart';
 import 'package:movie_app/service/dio_service_impl.dart';
-import 'package:movie_app/utils/apis.utils.dart';
 import 'package:movie_app/widgets/custom_list_card_widget.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,8 +15,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final MovieController _controller =
-      MovieController(MoviesRepositoryImpl(DioServiceImpl()));
+  final MovieController _controller = MovieController(
+      MoviesCacheRepositoryDecorator(MoviesRepositoryImpl(DioServiceImpl())));
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,10 +27,26 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 40),
-              Text(
-                'Movies',
-                style: Theme.of(context).textTheme.headline3,
-              ),
+              ValueListenableBuilder(
+                  valueListenable: _controller.movies,
+                  builder: (_, movies, __) {
+                    return Visibility(
+                      visible: movies != null,
+                      child: Column(
+                        children: [
+                          Text(
+                            'Movies',
+                            style: Theme.of(context).textTheme.headline3,
+                          ),
+                          TextField(
+                            decoration:
+                                const InputDecoration(icon: Icon(Icons.search)),
+                            onChanged: _controller.onChanged,
+                          )
+                        ],
+                      ),
+                    );
+                  }),
               ValueListenableBuilder<Movies?>(
                   valueListenable: _controller.movies,
                   builder: (_, movies, __) {
@@ -45,9 +62,7 @@ class _HomePageState extends State<HomePage> {
                                 (BuildContext context, int index) =>
                                     const Divider(),
                           )
-                        : const Center(
-                            child: CircularProgressIndicator(),
-                          );
+                        : Center(child: Lottie.asset('assets/lottie.json'));
                   }),
             ],
           ),
